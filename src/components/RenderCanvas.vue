@@ -1,9 +1,20 @@
 <template>
   <div>
     <div class="canvas-container">
-      <canvas class="main-canvas" ref="renderCanvas"/>
+      <canvas class="main-canvas" ref="renderCanvas"
+        @mousedown="startDragging($event)"
+        @mousemove="drag($event)"
+        @mouseup="stopDragging($event)"/>
     </div>
+    <button @click="manualRot(0, 0.2)">x +</button>
+    <button @click="manualRot(0, -0.2)">x -</button>
+    <button @click="manualRot(1, 0.2)">y +</button>
+    <button @click="manualRot(1, -0.2)">y -</button>
+    <button @click="manualRot(2, 0.2)">z +</button>
+    <button @click="manualRot(2, -0.2)">z -</button>
+    <div> {{ uniformValues.camera_rotation }} </div>
     <button @click="saveImage()">Save image</button>
+    <a class="virtual-link" ref="vlink"></a>
   </div>
 </template>
 
@@ -19,22 +30,33 @@ export default {
       buffer: null,
       program: null,
       uniformValues: {
-        camera_position: new Float32Array([0, 1, 0])
+        camera_position: new Float32Array([2, 2, 0]),
+        camera_rotation: new Float32Array([0, 0, 1])
+      },
+      canvasInfo: null,
+      dragData: {
+        active: false,
+        startingPoint: {
+          x: null,
+          y: null
+        },
+        cameraInitialRotation: [0, 0, 1]
       }
     }
   },
   mounted () {
     let canvas = this.$refs.renderCanvas
+    this.canvasInfo = canvas.getBoundingClientRect()
     this.gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true }) || canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true })
-    canvas.width = 800
-    canvas.height = 800
+    canvas.width = 900
+    canvas.height = 900
 
     this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
 
     this.setupWebGL(this.gl)
 
     window.addEventListener('keypress', e => {
-      this.handleKeypress(String.fromCharCode(e.keyCode))
+      this.handleKeypress(e.key)
     })
   },
   beforeDestroy () {
@@ -108,7 +130,8 @@ export default {
       }
 
       let uniformLocations = {
-        camera_position: gl.getUniformLocation(this.program, 'camera_position')
+        camera_position: gl.getUniformLocation(this.program, 'camera_position'),
+        camera_rotation: gl.getUniformLocation(this.program, 'camera_rotation')
       }
 
       gl.vertexAttribPointer(attributeLocations.vert_position, 2, gl.FLOAT, gl.FALSE, 2 * Float32Array.BYTES_PER_ELEMENT, 0)
@@ -117,6 +140,7 @@ export default {
       gl.useProgram(this.program)
 
       gl.uniform3fv(uniformLocations.camera_position, this.uniformValues.camera_position)
+      gl.uniform3fv(uniformLocations.camera_rotation, this.uniformValues.camera_rotation)
 
       // Draw 6 vertices => 2 triangles:
       gl.drawArrays(this.gl.TRIANGLES, 0, 6)
@@ -127,30 +151,80 @@ export default {
     handleKeypress (key) {
       switch (key) {
         case 'w':
+        case '8':
           this.uniformValues.camera_position[2]++
           break
         case 'a':
+        case '4':
           this.uniformValues.camera_position[0]--
           break
         case 's':
+        case '2':
           this.uniformValues.camera_position[2]--
           break
         case 'd':
+        case '6':
           this.uniformValues.camera_position[0]++
           break
         case 'q':
+        case '7':
           this.uniformValues.camera_position[1]--
           break
         case 'e':
+        case '9':
           this.uniformValues.camera_position[1]++
           break
       }
       this.drawFullscreenQuad()
     },
+    startDragging (event) {
+      this.dragData.startingPoint = {
+        x: event.clientX,
+        y: event.clientY
+      }
+      this.dragData.cameraInitialRotation = this.uniformValues.camera_rotation
+      this.dragData.active = true
+    },
+    drag (event) {
+      if (!this.dragData.active) return
+      let relativeDrag = {
+        x: (event.clientX - this.dragData.startingPoint.x) / this.canvasInfo.width,
+        y: -(event.clientY - this.dragData.startingPoint.y) / this.canvasInfo.height
+      }
+
+      relativeDrag.x *= 4
+      relativeDrag.y *= 4
+
+      let newCameraRotation = new Float32Array([
+        relativeDrag.x + this.dragData.cameraInitialRotation[0],
+        relativeDrag.y + this.dragData.cameraInitialRotation[1],
+        Math.cos(relativeDrag.x) - Math.sin(relativeDrag.y) + this.dragData.cameraInitialRotation[2]
+      ])
+
+      this.uniformValues.camera_rotation = newCameraRotation
+
+      this.drawFullscreenQuad()
+    },
+    stopDragging () {
+      if (!this.dragData.active) return
+      this.dragData.active = false
+    },
+    manualRot (coord, value) {
+      let newCameraRotation = this.uniformValues.camera_rotation
+      newCameraRotation[coord] += value
+      this.uniformValues.camera_rotation = newCameraRotation
+      this.drawFullscreenQuad()
+    },
     saveImage () {
       let canvas = this.$refs.renderCanvas
-      var image = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream')
-      window.location.href = image
+      let url = canvas.toDataURL('image/png').replace(/^data:image\/[^;]/, 'data:application/octet-stream')
+      let link = this.$refs.vlink
+
+      link.href = url
+      link.download = `melion-screenshot-${Math.floor(Date.now() / 1000)}.png`
+      link.click()
+
+      window.URL.revokeObjectURL(url)
     }
   }
 }
@@ -162,7 +236,10 @@ div
   text-align: center
 
 .main-canvas
-  height: 800px
-  width: 800px
+  height: 900px
+  width: 900px
+
+.virtual-link
+  display: none
 
 </style>

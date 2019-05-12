@@ -2,24 +2,28 @@ precision highp float;
 
 #define MAX_STEPS 1000
 #define MAX_DIST 10000.
-#define SURF_DIST .01
+#define SURF_DIST .005
 
 varying vec2 norm_coords;
 
 uniform vec3 camera_position;
+uniform vec3 camera_rotation;
 
 float GetDist(vec3 p) {
-  vec4 s = vec4(4, 4, 4, 1);
-  
-  float plane_dist = p.y;
+  vec4 s = vec4(4, 4, 4, 6);
+
+  float plane_distX = p.y;
+  float plane_distY = -(p.x - 4.);
+  float plane_distY2 = p.x + 4.;
 
   p = vec3(mod(p.x, 8.), mod(p.y, 8.), mod(p.z, 8.));
 
-  float sphere_dist = length(p-s.xyz)-s.w;
+  float sphere_dist = -(length(p-s.xyz)-s.w);
     
   float d = sphere_dist;
 
-  return min(d, plane_dist);
+  return d;
+  // return min(d, min(plane_distX, min(plane_distY, plane_distY2)));
 }
 
 float RayMarch(vec3 ro, vec3 rd) {
@@ -65,12 +69,20 @@ void main() {
 
   vec3 col = vec3(0);
 
-  vec3 ro = camera_position;
+  vec4 q;
+
+  vec3 a = cross(camera_position, camera_rotation);
+  q.xyz = a;
+  q.w = sqrt((pow(length(camera_position), 2.)) * (pow(length(camera_rotation), 2.))) + dot(camera_position, camera_rotation);
+
+  vec3 new_camera = camera_position;
+
   vec3 rd = normalize(vec3(uv.x, uv.y, 1));
+  rd = normalize(rd + normalize(camera_rotation));
 
-  float d = RayMarch(ro, rd);
+  float d = RayMarch(new_camera, rd);
 
-  vec3 p = ro + rd * d;
+  vec3 p = new_camera + rd * d;
 
   float dif = GetLight(p);
   col = vec3(dif);

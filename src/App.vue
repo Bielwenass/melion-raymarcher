@@ -11,5 +11,6 @@ body
   font-family: monospace
   background-color: black
   background-image: url("assets/dots.png")
+  color: white
 
 </style>
