@@ -8,6 +8,8 @@ varying vec2 norm_coords;
 
 uniform vec3 camera_position;
 uniform vec3 camera_direction;
+uniform vec3 camera_right;
+uniform vec3 camera_up;
 
 float GetDist(vec3 p) {
   vec4 s = vec4(4, 4, 4, 6);
@@ -68,8 +70,8 @@ void main() {
   vec3 col = vec3(0);
 
   vec3 forward = normalize(camera_direction);
-  vec3 right = normalize(vec3(forward.z, 0., -forward.x ));
-  vec3 up = normalize(cross(forward, right));
+  vec3 right = normalize(camera_right);
+  vec3 up = normalize(camera_up);
 
   float fov = 0.70;
 

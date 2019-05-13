@@ -31,7 +31,9 @@ export default {
       program: null,
       uniformValues: {
         camera_position: new Float32Array([2, 2, 0]),
-        camera_direction: new Float32Array([1, 0, 0])
+        camera_direction: new Float32Array([1, 0, 0]),
+        camera_right: new Float32Array([0, 0, -1]),
+        camera_up: new Float32Array([0, 1, 0])
       },
       canvasInfo: null,
       dragData: {
@@ -131,7 +133,9 @@ export default {
 
       let uniformLocations = {
         camera_position: gl.getUniformLocation(this.program, 'camera_position'),
-        camera_direction: gl.getUniformLocation(this.program, 'camera_direction')
+        camera_direction: gl.getUniformLocation(this.program, 'camera_direction'),
+        camera_right: gl.getUniformLocation(this.program, 'camera_right'),
+        camera_up: gl.getUniformLocation(this.program, 'camera_up')
       }
 
       gl.vertexAttribPointer(attributeLocations.vert_position, 2, gl.FLOAT, gl.FALSE, 2 * Float32Array.BYTES_PER_ELEMENT, 0)
@@ -141,6 +145,8 @@ export default {
 
       gl.uniform3fv(uniformLocations.camera_position, this.uniformValues.camera_position)
       gl.uniform3fv(uniformLocations.camera_direction, this.uniformValues.camera_direction)
+      gl.uniform3fv(uniformLocations.camera_right, this.uniformValues.camera_right)
+      gl.uniform3fv(uniformLocations.camera_up, this.uniformValues.camera_up)
 
       // Draw 6 vertices => 2 triangles:
       gl.drawArrays(this.gl.TRIANGLES, 0, 6)
@@ -215,14 +221,17 @@ export default {
       let sensitivity = 0.1
       relativeDrag.x *= sensitivity
       relativeDrag.y *= sensitivity
-      let up = new Float32Array([0, 1, 0])
+      let up = this.uniformValues.camera_up
       let newCameraRotation = this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_direction)
+      let right =  this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_right)
 
-      let right = this.cross(up, this.uniformValues.camera_direction)
       newCameraRotation = this.rotateAround(right, relativeDrag.y, newCameraRotation)
+      up = this.rotateAround(right, relativeDrag.y, up)
 
       this.uniformValues.camera_direction = newCameraRotation
-      console.log(this.uniformValues.camera_direction)
+      this.uniformValues.camera_right = right
+      this.uniformValues.camera_up = up
+
       this.drawFullscreenQuad()
     },
     stopDragging () {
