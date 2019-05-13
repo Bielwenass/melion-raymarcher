@@ -154,27 +154,32 @@ export default {
       // Cleanup:
       gl.bindBuffer(this.gl.ARRAY_BUFFER, null)
     },
+    shiftWithAlpha(origin, axis, alpha){
+      return new Float32Array([origin[0] + axis[0]*alpha, origin[1] + axis[1]*alpha, origin[2] + axis[2]*alpha])
+    },
     handleKeypress (key) {
+      let key_sensetivity = 0.5
       switch (key) {
         case 'w':
-          this.uniformValues.camera_position[2]++
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, key_sensetivity)
           break
         case 'a':
-          this.uniformValues.camera_position[0]--
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, -key_sensetivity)
           break
         case 's':
-          this.uniformValues.camera_position[2]--
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, -key_sensetivity)
           break
         case 'd':
-          this.uniformValues.camera_position[0]++
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, key_sensetivity)
           break
         case 'q':
-          this.uniformValues.camera_position[1]--
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, -key_sensetivity)
           break
         case 'e':
-          this.uniformValues.camera_position[1]++
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, key_sensetivity)
           break
       }
+ 
       this.drawFullscreenQuad()
     },
     cross(a, b) {
