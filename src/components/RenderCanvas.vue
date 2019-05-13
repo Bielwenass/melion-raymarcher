@@ -154,55 +154,57 @@ export default {
       // Cleanup:
       gl.bindBuffer(this.gl.ARRAY_BUFFER, null)
     },
-    shiftWithAlpha(origin, axis, alpha){
-      return new Float32Array([origin[0] + axis[0]*alpha, origin[1] + axis[1]*alpha, origin[2] + axis[2]*alpha])
+    shiftWithAlpha (origin, axis, alpha) {
+      return new Float32Array([origin[0] + axis[0] * alpha, origin[1] + axis[1] * alpha, origin[2] + axis[2] * alpha])
     },
     handleKeypress (key) {
-      let key_sensetivity = 0.5
+      let keySensetivity = 0.5
       switch (key) {
         case 'w':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, key_sensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, keySensetivity)
           break
         case 'a':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, -key_sensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, -keySensetivity)
           break
         case 's':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, -key_sensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, -keySensetivity)
           break
         case 'd':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, key_sensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, keySensetivity)
           break
         case 'q':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, -key_sensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, -keySensetivity)
           break
         case 'e':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, key_sensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, keySensetivity)
           break
       }
- 
+
       this.drawFullscreenQuad()
     },
-    cross(a, b) {
-      return new Float32Array([a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]])
+    cross (a, b) {
+      return new Float32Array([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]])
     },
-    normalize(v) {
-      let len = Math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
-      return new Float32Array([v[0]/len, v[1]/len, v[2]/len])
+    normalize (v) {
+      let len = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
+      return new Float32Array([v[0] / len, v[1] / len, v[2] / len])
     },
-    rotateAround(axis, angle, vec) {
+    rotateAround (axis, angle, vec) {
       axis = this.normalize(axis)
       let s = Math.sin(angle)
       let c = Math.cos(angle)
       let oc = 1.0 - c
-        
-      let mat3 = [[oc * axis[0] * axis[0] + c,           oc * axis[0] * axis[1] - axis[2] * s,  oc * axis[2] * axis[0] + axis[1] * s],
-              [oc * axis[0] * axis[1] + axis[2] * s,  oc * axis[1] * axis[1] + c,           oc * axis[1] * axis[2] - axis[0] * s], 
-              [oc * axis[2] * axis[0] - axis[1] * s,  oc * axis[1] * axis[2] + axis[0] * s,  oc * axis[2] * axis[2] + c]]
 
-      let res = new Float32Array([0,0,0])
-      for(var i = 0; i < 3; i++) {
-        for(var j = 0; j < 3; j++) {
-          res[i] += vec[j]*mat3[i][j]
+      let mat3 = [
+        [oc * axis[0] * axis[0] + c, oc * axis[0] * axis[1] - axis[2] * s, oc * axis[2] * axis[0] + axis[1] * s],
+        [oc * axis[0] * axis[1] + axis[2] * s, oc * axis[1] * axis[1] + c, oc * axis[1] * axis[2] - axis[0] * s],
+        [oc * axis[2] * axis[0] - axis[1] * s, oc * axis[1] * axis[2] + axis[0] * s, oc * axis[2] * axis[2] + c]
+      ]
+
+      let res = new Float32Array([0, 0, 0])
+      for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+          res[i] += vec[j] * mat3[i][j]
         }
       }
 
@@ -228,7 +230,7 @@ export default {
       relativeDrag.y *= sensitivity
       let up = this.uniformValues.camera_up
       let newCameraRotation = this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_direction)
-      let right =  this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_right)
+      let right = this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_right)
 
       newCameraRotation = this.rotateAround(right, relativeDrag.y, newCameraRotation)
       up = this.rotateAround(right, relativeDrag.y, up)
