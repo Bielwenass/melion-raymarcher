@@ -12,7 +12,7 @@
     <button @click="manualRot(1, -0.2)">y -</button>
     <button @click="manualRot(2, 0.2)">z +</button>
     <button @click="manualRot(2, -0.2)">z -</button>
-    <div> {{ uniformValues.camera_rotation }} </div>
+    <div> {{ uniformValues.camera_direction }} </div>
     <button @click="saveImage()">Save image</button>
     <a class="virtual-link" ref="vlink"></a>
   </div>
@@ -31,7 +31,7 @@ export default {
       program: null,
       uniformValues: {
         camera_position: new Float32Array([2, 2, 0]),
-        camera_rotation: new Float32Array([0, 0, 1])
+        camera_direction: new Float32Array([1, 0, 0])
       },
       canvasInfo: null,
       dragData: {
@@ -40,7 +40,7 @@ export default {
           x: null,
           y: null
         },
-        cameraInitialRotation: [0, 0, 1]
+        cameraInitialRotation: [1, 0, 0]
       }
     }
   },
@@ -131,7 +131,7 @@ export default {
 
       let uniformLocations = {
         camera_position: gl.getUniformLocation(this.program, 'camera_position'),
-        camera_rotation: gl.getUniformLocation(this.program, 'camera_rotation')
+        camera_direction: gl.getUniformLocation(this.program, 'camera_direction')
       }
 
       gl.vertexAttribPointer(attributeLocations.vert_position, 2, gl.FLOAT, gl.FALSE, 2 * Float32Array.BYTES_PER_ELEMENT, 0)
@@ -140,7 +140,7 @@ export default {
       gl.useProgram(this.program)
 
       gl.uniform3fv(uniformLocations.camera_position, this.uniformValues.camera_position)
-      gl.uniform3fv(uniformLocations.camera_rotation, this.uniformValues.camera_rotation)
+      gl.uniform3fv(uniformLocations.camera_direction, this.uniformValues.camera_direction)
 
       // Draw 6 vertices => 2 triangles:
       gl.drawArrays(this.gl.TRIANGLES, 0, 6)
@@ -151,27 +151,21 @@ export default {
     handleKeypress (key) {
       switch (key) {
         case 'w':
-        case '8':
           this.uniformValues.camera_position[2]++
           break
         case 'a':
-        case '4':
           this.uniformValues.camera_position[0]--
           break
         case 's':
-        case '2':
           this.uniformValues.camera_position[2]--
           break
         case 'd':
-        case '6':
           this.uniformValues.camera_position[0]++
           break
         case 'q':
-        case '7':
           this.uniformValues.camera_position[1]--
           break
         case 'e':
-        case '9':
           this.uniformValues.camera_position[1]++
           break
       }
@@ -182,26 +176,27 @@ export default {
         x: event.clientX,
         y: event.clientY
       }
-      this.dragData.cameraInitialRotation = this.uniformValues.camera_rotation
+      this.dragData.cameraInitialRotation = this.uniformValues.camera_direction
       this.dragData.active = true
     },
     drag (event) {
       if (!this.dragData.active) return
       let relativeDrag = {
         x: (event.clientX - this.dragData.startingPoint.x) / this.canvasInfo.width,
-        y: -(event.clientY - this.dragData.startingPoint.y) / this.canvasInfo.height
+        y: (event.clientY - this.dragData.startingPoint.y) / this.canvasInfo.height
       }
 
-      relativeDrag.x *= 4
-      relativeDrag.y *= 4
+      // sensitivity
+      relativeDrag.x *= 2
+      relativeDrag.y *= 2
 
       let newCameraRotation = new Float32Array([
-        relativeDrag.x + this.dragData.cameraInitialRotation[0],
-        relativeDrag.y + this.dragData.cameraInitialRotation[1],
-        Math.cos(relativeDrag.x) - Math.sin(relativeDrag.y) + this.dragData.cameraInitialRotation[2]
+        1,
+        Math.sin(relativeDrag.y) + this.dragData.cameraInitialRotation[1],
+        Math.sin(relativeDrag.x) + this.dragData.cameraInitialRotation[2]
       ])
 
-      this.uniformValues.camera_rotation = newCameraRotation
+      this.uniformValues.camera_direction = newCameraRotation
 
       this.drawFullscreenQuad()
     },
@@ -210,9 +205,10 @@ export default {
       this.dragData.active = false
     },
     manualRot (coord, value) {
-      let newCameraRotation = this.uniformValues.camera_rotation
+      let newCameraRotation = this.uniformValues.camera_direction
       newCameraRotation[coord] += value
-      this.uniformValues.camera_rotation = newCameraRotation
+      this.uniformValues.camera_direction = newCameraRotation
+      console.log(newCameraRotation)
       this.drawFullscreenQuad()
     },
     saveImage () {

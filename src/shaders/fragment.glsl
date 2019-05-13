@@ -7,7 +7,7 @@ precision highp float;
 varying vec2 norm_coords;
 
 uniform vec3 camera_position;
-uniform vec3 camera_rotation;
+uniform vec3 camera_direction;
 
 float GetDist(vec3 p) {
   vec4 s = vec4(4, 4, 4, 6);
@@ -65,27 +65,22 @@ float GetLight(vec3 p) {
 
 void main() {
 
-  vec2 uv = norm_coords;
-
   vec3 col = vec3(0);
 
-  vec4 q;
+  vec3 forward = normalize(camera_direction);
+  vec3 right = normalize(vec3(forward.z, 0., -forward.x ));
+  vec3 up = normalize(cross(forward, right));
 
-  vec3 a = cross(camera_position, camera_rotation);
-  q.xyz = a;
-  q.w = sqrt((pow(length(camera_position), 2.)) * (pow(length(camera_rotation), 2.))) + dot(camera_position, camera_rotation);
+  float fov = 0.70;
 
-  vec3 new_camera = camera_position;
+  vec3 rd = normalize(forward + fov * norm_coords.x * right + fov * norm_coords.y * up);
 
-  vec3 rd = normalize(vec3(uv.x, uv.y, 1));
-  rd = normalize(rd + normalize(camera_rotation));
+  float d = RayMarch(camera_position, rd);
 
-  float d = RayMarch(new_camera, rd);
-
-  vec3 p = new_camera + rd * d;
+  vec3 p = camera_position + rd * d;
 
   float dif = GetLight(p);
   col = vec3(dif);
-  
+
   gl_FragColor = vec4(col, 1.0);
 }
