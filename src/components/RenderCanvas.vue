@@ -171,6 +171,32 @@ export default {
       }
       this.drawFullscreenQuad()
     },
+    cross(a, b) {
+      return new Float32Array([a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]])
+    },
+    normalize(v) {
+      let len = Math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
+      return new Float32Array([v[0]/len, v[1]/len, v[2]/len])
+    },
+    rotateAround(axis, angle, vec) {
+      axis = this.normalize(axis)
+      let s = Math.sin(angle)
+      let c = Math.cos(angle)
+      let oc = 1.0 - c
+        
+      let mat3 = [[oc * axis[0] * axis[0] + c,           oc * axis[0] * axis[1] - axis[2] * s,  oc * axis[2] * axis[0] + axis[1] * s],
+              [oc * axis[0] * axis[1] + axis[2] * s,  oc * axis[1] * axis[1] + c,           oc * axis[1] * axis[2] - axis[0] * s], 
+              [oc * axis[2] * axis[0] - axis[1] * s,  oc * axis[1] * axis[2] + axis[0] * s,  oc * axis[2] * axis[2] + c]]
+
+      let res = new Float32Array([0,0,0])
+      for(var i = 0; i < 3; i++) {
+        for(var j = 0; j < 3; j++) {
+          res[i] += vec[j]*mat3[i][j]
+        }
+      }
+
+      return res
+    },
     startDragging (event) {
       this.dragData.startingPoint = {
         x: event.clientX,
@@ -186,18 +212,17 @@ export default {
         y: (event.clientY - this.dragData.startingPoint.y) / this.canvasInfo.height
       }
 
-      // sensitivity
-      relativeDrag.x *= 2
-      relativeDrag.y *= 2
+      let sensitivity = 0.1
+      relativeDrag.x *= sensitivity
+      relativeDrag.y *= sensitivity
+      let up = new Float32Array([0, 1, 0])
+      let newCameraRotation = this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_direction)
 
-      let newCameraRotation = new Float32Array([
-        1,
-        Math.sin(relativeDrag.y) + this.dragData.cameraInitialRotation[1],
-        Math.sin(relativeDrag.x) + this.dragData.cameraInitialRotation[2]
-      ])
+      let right = this.cross(up, this.uniformValues.camera_direction)
+      newCameraRotation = this.rotateAround(right, relativeDrag.y, newCameraRotation)
 
       this.uniformValues.camera_direction = newCameraRotation
-
+      console.log(this.uniformValues.camera_direction)
       this.drawFullscreenQuad()
     },
     stopDragging () {
