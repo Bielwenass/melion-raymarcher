@@ -221,11 +221,11 @@ export default {
     drag (event) {
       if (!this.dragData.active) return
       let relativeDrag = {
-        x: (event.clientX - this.dragData.startingPoint.x) / this.canvasInfo.width,
-        y: (event.clientY - this.dragData.startingPoint.y) / this.canvasInfo.height
+        x: -(event.clientX - this.dragData.startingPoint.x) / this.canvasInfo.width,
+        y: -(event.clientY - this.dragData.startingPoint.y) / this.canvasInfo.height
       }
 
-      let sensitivity = 0.1
+      let sensitivity = 1.5
       relativeDrag.x *= sensitivity
       relativeDrag.y *= sensitivity
       let up = this.uniformValues.camera_up
@@ -238,6 +238,11 @@ export default {
       this.uniformValues.camera_direction = newCameraRotation
       this.uniformValues.camera_right = right
       this.uniformValues.camera_up = up
+
+      this.dragData.startingPoint = {
+        x: event.clientX,
+        y: event.clientY
+      }
 
       this.drawFullscreenQuad()
     },
