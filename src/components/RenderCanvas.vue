@@ -30,7 +30,7 @@ export default {
       buffer: null,
       program: null,
       uniformValues: {
-        camera_position: new Float32Array([2, 2, 0]),
+        camera_position: new Float32Array([-2, 0, 0]),
         camera_direction: new Float32Array([1, 0, 0]),
         camera_right: new Float32Array([0, 0, -1]),
         camera_up: new Float32Array([0, 1, 0])
