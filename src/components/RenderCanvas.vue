@@ -12,7 +12,8 @@
     <button @click="manualRot(1, -0.2)">y -</button>
     <button @click="manualRot(2, 0.2)">z +</button>
     <button @click="manualRot(2, -0.2)">z -</button>
-    <div> {{ uniformValues.camera_direction }} </div>
+    <div> pos: {{ uniformValues.camera_position }} </div>
+    <div> dir: {{ uniformValues.camera_direction }} </div>
     <button @click="saveImage()">Save image</button>
     <a class="virtual-link" ref="vlink"></a>
   </div>
@@ -58,7 +59,7 @@ export default {
     this.setupWebGL(this.gl)
 
     window.addEventListener('keypress', e => {
-      this.handleKeypress(e.key)
+      this.handleKeypress(e)
     })
   },
   beforeDestroy () {
@@ -157,25 +158,29 @@ export default {
     shiftWithAlpha (origin, axis, alpha) {
       return new Float32Array([origin[0] + axis[0] * alpha, origin[1] + axis[1] * alpha, origin[2] + axis[2] * alpha])
     },
-    handleKeypress (key) {
+    handleKeypress (event) {
+      event.preventDefault()
+      const key = event.code
+      console.log(event)
       let keySensetivity = 0.5
+      keySensetivity *= event.shiftKey ? 10 : 1
       switch (key) {
-        case 'w':
+        case 'KeyW':
           this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, keySensetivity)
           break
-        case 'a':
+        case 'KeyA':
           this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, -keySensetivity)
           break
-        case 's':
+        case 'KeyS':
           this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, -keySensetivity)
           break
-        case 'd':
+        case 'KeyD':
           this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, keySensetivity)
           break
-        case 'q':
+        case 'KeyQ':
           this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, -keySensetivity)
           break
-        case 'e':
+        case 'KeyE':
           this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, keySensetivity)
           break
       }
