@@ -4,7 +4,8 @@
       <canvas class="main-canvas" ref="renderCanvas"
         @mousedown="startDragging($event)"
         @mousemove="drag($event)"
-        @mouseup="stopDragging($event)"/>
+        @mouseup="stopDragging($event)"
+        @wheel="handleScroll($event)"/>
     </div>
     <button @click="manualRot(0, 0.2)">x +</button>
     <button @click="manualRot(0, -0.2)">x -</button>
@@ -34,7 +35,8 @@ export default {
         camera_position: new Float32Array([-2, 0, 0]),
         camera_direction: new Float32Array([1, 0, 0]),
         camera_right: new Float32Array([0, 0, -1]),
-        camera_up: new Float32Array([0, 1, 0])
+        camera_up: new Float32Array([0, 1, 0]),
+        field_of_view: new Float32Array([0.7])
       },
       canvasInfo: null,
       dragData: {
@@ -51,8 +53,8 @@ export default {
     let canvas = this.$refs.renderCanvas
     this.canvasInfo = canvas.getBoundingClientRect()
     this.gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true }) || canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true })
-    canvas.width = 900
-    canvas.height = 900
+    canvas.width = 850
+    canvas.height = 850
 
     this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
 
@@ -136,7 +138,8 @@ export default {
         camera_position: gl.getUniformLocation(this.program, 'camera_position'),
         camera_direction: gl.getUniformLocation(this.program, 'camera_direction'),
         camera_right: gl.getUniformLocation(this.program, 'camera_right'),
-        camera_up: gl.getUniformLocation(this.program, 'camera_up')
+        camera_up: gl.getUniformLocation(this.program, 'camera_up'),
+        field_of_view: gl.getUniformLocation(this.program, 'field_of_view')
       }
 
       gl.vertexAttribPointer(attributeLocations.vert_position, 2, gl.FLOAT, gl.FALSE, 2 * Float32Array.BYTES_PER_ELEMENT, 0)
@@ -148,6 +151,7 @@ export default {
       gl.uniform3fv(uniformLocations.camera_direction, this.uniformValues.camera_direction)
       gl.uniform3fv(uniformLocations.camera_right, this.uniformValues.camera_right)
       gl.uniform3fv(uniformLocations.camera_up, this.uniformValues.camera_up)
+      gl.uniform1fv(uniformLocations.field_of_view, this.uniformValues.field_of_view)
 
       // Draw 6 vertices => 2 triangles:
       gl.drawArrays(this.gl.TRIANGLES, 0, 6)
@@ -255,6 +259,10 @@ export default {
       if (!this.dragData.active) return
       this.dragData.active = false
     },
+    handleScroll (event) {
+      this.uniformValues.field_of_view[0] += event.deltaY / 200
+      this.drawFullscreenQuad()
+    },
     manualRot (coord, value) {
       let newCameraRotation = this.uniformValues.camera_direction
       newCameraRotation[coord] += value
@@ -283,8 +291,8 @@ div
   text-align: center
 
 .main-canvas
-  height: 900px
-  width: 900px
+  height: 850px
+  width: 850px
 
 .virtual-link
   display: none

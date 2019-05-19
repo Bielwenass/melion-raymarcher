@@ -1,8 +1,10 @@
+#version 300 es
+
 precision highp float;
 
-attribute vec2 vert_position;
+in vec2 vert_position;
 
-varying vec2 norm_coords;
+out vec2 norm_coords;
 
 void main() {
   norm_coords = vert_position;

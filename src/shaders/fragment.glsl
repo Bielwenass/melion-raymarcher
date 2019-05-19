@@ -1,23 +1,31 @@
+#version 300 es
+
 precision highp float;
 
 #define MAX_STEPS 1000.
-#define MAX_DIST 10000.
+#define MAX_DIST 1000.
 #define SURF_DIST .0005
 
-#define SIZE 900
+#define SIZE 850
 
-#define AA 5
+#define AA 2
 
-varying vec2 norm_coords;
+in vec2 norm_coords;
 
 uniform vec3 camera_position;
 uniform vec3 camera_direction;
 uniform vec3 camera_right;
 uniform vec3 camera_up;
+uniform float field_of_view;
 
+out vec4 fragmentColor;
+
+// float GetDist(vec3 w) {
+//   return sin(w.x)-cos(w.y)-cos(w.z);
+// }
 
 float GetDist(vec3 z) {
-  const int Iterations = 20;
+  const int Iterations = 15;
   float Offset = 1.;
   float Scale = 2.;
   float r;
@@ -49,18 +57,19 @@ float GetDist(vec3 z) {
 //   // return min(d, min(plane_distX, min(plane_distY, plane_distY2)));
 // }
 
-vec2 RayMarch(vec3 ro, vec3 rd) {
+vec3 RayMarch(vec3 ro, vec3 rd) {
   float dO=0.;
-
+  float min_dist = MAX_DIST;
 
   for(float i = 0.; i<MAX_STEPS; i++) {
     vec3 p = ro + rd*dO;
     float dS = GetDist(p);
     dO += dS;
-    if(dO>MAX_DIST || dS<SURF_DIST) return vec2(dO, i);
+    if (dS < min_dist) min_dist = dS;
+    if(dO>MAX_DIST || dS<SURF_DIST) return vec3(dO, i, min_dist);
   }
 
-  return vec2(dO, MAX_STEPS);
+  return vec3(dO, MAX_STEPS, min_dist);
 }
 
 vec3 GetNormal(vec3 p) {
@@ -89,41 +98,49 @@ float GetLight(vec3 p, float d) {
   return dif;
 }
 
-void main() {
-   
+void main() {  
   vec3 col = vec3(0);
 
- 
-  
   vec3 forward = normalize(camera_direction);
   vec3 right = normalize(camera_right);
   vec3 up = normalize(camera_up);
 
-  float fov = 0.70;
+  float fov = field_of_view;
   float dist =0.;
   float steps = 0.;
+  float min_dist = 0.;
 
   vec3 rd;
   float pixel_size = 2. / float(SIZE);
   float delta = pixel_size / 2.0 / float(AA);
-  
+
+  // --- with no antialiasing ---
+  // rd = normalize(forward + fov * norm_coords.x * right + fov * norm_coords.y * up);
+  // vec3 ray_info = RayMarch(camera_position, rd);
+  // dist += ray_info.x;
+  // steps += ray_info.y;
+  // min_dist += ray_info.z;
+
   for(int i = 1; i <= AA; i++)
   {
     for(int j = 1; j <= AA; j++)
     {
       rd = normalize(forward + fov * (norm_coords.x + float(i) * delta - pixel_size/2.) * right + fov * (norm_coords.y + float(j) * delta - pixel_size/2.) * up);
-      vec2 ray_info = RayMarch(camera_position, rd);
+      vec3 ray_info = RayMarch(camera_position, rd);
       dist += ray_info.x;
-      steps +=  ray_info.y;
+      steps += ray_info.y;
+      min_dist += ray_info.z;
     }
   }
+
   dist /= float(AA*AA);
   steps /= float(AA*AA);
+  min_dist /= float(AA*AA);
 
   vec3 p = camera_position + rd * dist;
 
   float dif = GetLight(p, steps);
   col = vec3(dif);
 
-  gl_FragColor = vec4(col, 1.0);
+  fragmentColor = vec4(col.xy, min_dist, 1.0);
 }
