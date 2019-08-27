@@ -4,11 +4,11 @@ precision highp float;
 
 #define MAX_STEPS 1000.
 #define MAX_DIST 1000.
-#define SURF_DIST .0005
+#define SURF_DIST .0000005
 
 #define SIZE 850
 
-#define AA 2
+#define AA 1
 
 in vec2 norm_coords;
 
@@ -24,21 +24,90 @@ out vec4 fragmentColor;
 //   return sin(w.x)-cos(w.y)-cos(w.z);
 // }
 
-float GetDist(vec3 z) {
-  const int Iterations = 15;
-  float Offset = 1.;
-  float Scale = 2.;
-  float r;
-  int i = 0;
-  for (int n = 0; n < Iterations; n++) {
-    if(z.x+z.y<0.) z.xy = -z.yx; // fold 1
-    if(z.x+z.z<0.) z.xz = -z.zx; // fold 2
-    if(z.y+z.z<0.) z.zy = -z.yz; // fold 3
-    z = z*Scale - Offset*(Scale-1.0);
-    i = n;
+// float GetDist(vec3 z) {
+//   const int Iterations = 15;
+//   float Offset = 1.;
+//   float Scale = 2.1;
+//   float r;
+//   int i = 0;
+//   for (int n = 0; n < Iterations; n++) {
+//     if(z.x+z.y<0.) z.xy = -z.yx; // fold 1
+//     if(z.x+z.z<0.) z.xz = -z.zx; // fold 2
+//     if(z.y+z.z<0.) z.zy = -z.yz; // fold 3
+//     z = z*Scale - Offset*(Scale-1.0);
+//     i = n;
+//   }
+//   return (length(z) ) * pow(Scale, -float(i));
+// }
+
+float GetDist(vec3 pos) {
+  int Iterations = 32;
+  int Modifier = -5;
+
+  // pos = vec3(mod(pos.x, 8.), mod(pos.y, 8.), mod(pos.z, 8.));
+  //by recursively digging a box
+  float x = pos.x;
+  float y = pos.y;
+  float z = pos.z;
+  
+  x = mod(x * 0.5 + 1., 1.);
+  y = mod(y * 0.5 + 1., 1.);
+  z = mod(z * 0.5 + 1., 1.); 
+
+  float xx = abs(x-0.5)-0.5;
+  float yy = abs(y-0.5)-0.5;
+  float zz = abs(z-0.5)-0.5;
+ 
+  float d1 = max(xx, max(yy, zz)); //distance to the box
+  float d = d1; 
+  float p = 1.0;
+  
+  int maxIter = int(Iterations);
+  
+  for (int i=1; i<=5; ++i) 
+  {
+    if( i > int(Iterations)) break;
+    float xa = mod(3.0*x*p, 3.0);
+    float ya = mod(3.0*y*p, 3.0);
+    float za = mod(3.0*z*p, 3.0);
+    
+    //p*=3.0;
+    p *= float(int(Modifier));
+
+    float xx = 0.5-abs(xa - 1.5);
+    float yy = 0.5-abs(ya - 1.5); 
+    float zz = 0.5-abs(za - 1.5);
+    
+    d1 = min(max(xx, zz), min(max(xx, yy), max(yy, zz))) / p; //distance inside the 3 axis-aligned square tubes
+
+    d = max(d, d1); //intersection
   }
-  return (length(z) ) * pow(Scale, -float(i));
+
+  return d;
 }
+
+// float GetDist(vec3 z) {
+//   const int Iterations = 20;
+//   float Offset = 1.;
+//   float Scale = 2.1;
+//   vec3 a1 = vec3(1,1,1);
+//   vec3 a2 = vec3(-1,-1,1);
+//   vec3 a3 = vec3(1,-1,-1);
+//   vec3 a4 = vec3(-1,1,-1);
+//   vec3 c;
+//   int i = 0;
+//   float dist, d;
+//   for (int n = 0; n < Iterations; n++) {
+//     c = a1; dist = length(z-a1);
+//     d = length(z-a2); if (d < dist) { c = a2; dist=d; }
+//     d = length(z-a3); if (d < dist) { c = a3; dist=d; }
+//     d = length(z-a4); if (d < dist) { c = a4; dist=d; }
+//     z = Scale*z-c*(Scale-1.0);
+//     i = n;
+//   }
+
+//   return length(z) * pow(Scale, float(-i));
+// }
 
 // float GetDist(vec3 p) {
 //   vec4 s = vec4(4, 4, 4, 6);
@@ -66,9 +135,12 @@ vec3 RayMarch(vec3 ro, vec3 rd) {
     float dS = GetDist(p);
     dO += dS;
     if (dS < min_dist) min_dist = dS;
+    // if(dO>MAX_DIST) return normalize(vec3(dO / MAX_DIST, 0, i));
+    // if(dS<SURF_DIST) return normalize(vec3 (0, 1, 0));
     if(dO>MAX_DIST || dS<SURF_DIST) return vec3(dO, i, min_dist);
   }
 
+  // return vec3(0, 0, 1);
   return vec3(dO, MAX_STEPS, min_dist);
 }
 
@@ -87,11 +159,12 @@ vec3 GetNormal(vec3 p) {
 
 float GetLight(vec3 p, float d) {
   vec3 lightPos = camera_position;
+  // vec3 lightPos = vec3(-1, 1, 1);
   vec3 l = normalize(lightPos-p);
   vec3 n = GetNormal(p);
 
-  float dif = clamp(dot(n, l), 0.7, 1.);
-  float light_fading = .05;
+  float dif = clamp(dot(n, l), 1., 1.);
+  float light_fading = .03;
 
   dif *= exp( - d * light_fading);
 
@@ -142,5 +215,7 @@ void main() {
   float dif = GetLight(p, steps);
   col = vec3(dif);
 
-  fragmentColor = vec4(col.xy, min_dist, 1.0);
+  // fragmentColor = vec4(dist, dist, min_dist, 1.0);
+  // fragmentColor = vec4(normalize(vec3(dist, steps, min_dist * 1000.)), 1.0);
+  fragmentColor = vec4(col.x, steps / 2000., steps / 2000., 1.0);
 }

@@ -13,6 +13,7 @@
     <button @click="manualRot(1, -0.2)">y -</button>
     <button @click="manualRot(2, 0.2)">z +</button>
     <button @click="manualRot(2, -0.2)">z -</button>
+    <div>Step size: <input type="text" v-model.number="stepSize"></div>
     <div> pos: {{ uniformValues.camera_position }} </div>
     <div> dir: {{ uniformValues.camera_direction }} </div>
     <button @click="saveImage()">Save image</button>
@@ -39,6 +40,7 @@ export default {
         field_of_view: new Float32Array([0.7])
       },
       canvasInfo: null,
+      stepSize: 0.05,
       dragData: {
         active: false,
         startingPoint: {
@@ -163,10 +165,8 @@ export default {
       return new Float32Array([origin[0] + axis[0] * alpha, origin[1] + axis[1] * alpha, origin[2] + axis[2] * alpha])
     },
     handleKeypress (event) {
-      event.preventDefault()
       const key = event.code
-      console.log(event)
-      let keySensetivity = 0.5
+      let keySensetivity = this.stepSize
       keySensetivity *= event.shiftKey ? 10 : 1
       switch (key) {
         case 'KeyW':
@@ -187,8 +187,11 @@ export default {
         case 'KeyE':
           this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, keySensetivity)
           break
+        default:
+          return
       }
 
+      event.preventDefault()
       this.drawFullscreenQuad()
     },
     cross (a, b) {
@@ -267,7 +270,6 @@ export default {
       let newCameraRotation = this.uniformValues.camera_direction
       newCameraRotation[coord] += value
       this.uniformValues.camera_direction = newCameraRotation
-      console.log(newCameraRotation)
       this.drawFullscreenQuad()
     },
     saveImage () {
