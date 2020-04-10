@@ -1,16 +1,28 @@
 <template>
   <div id="app">
-    <router-view/>
+    <RenderCanvas/>
   </div>
 </template>
 
-<style lang="sass">
-@import "assets/normalize.min.css"
+<script>
+import RenderCanvas from './components/RenderCanvas.vue'
 
-body
-  font-family: monospace
-  background-color: black
-  background-image: url("assets/dots.png")
-  color: white
+export default {
+  name: 'App',
+  components: {
+    RenderCanvas
+  }
+}
+</script>
+
+<style>
+@import "assets/normalize.min.css";
+
+body {
+  font-family: monospace;
+  background-color: black;
+  background-image: url("assets/dots.png");
+  color: white;
+}
 
 </style>

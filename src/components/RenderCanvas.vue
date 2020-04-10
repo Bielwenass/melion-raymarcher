@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="wrapper">
     <div class="canvas-container">
       <canvas class="main-canvas" ref="renderCanvas"
         @mousedown="startDragging($event)"
@@ -7,22 +7,27 @@
         @mouseup="stopDragging($event)"
         @wheel="handleScroll($event)"/>
     </div>
-    <button @click="manualRot(0, 0.2)">x +</button>
-    <button @click="manualRot(0, -0.2)">x -</button>
-    <button @click="manualRot(1, 0.2)">y +</button>
-    <button @click="manualRot(1, -0.2)">y -</button>
-    <button @click="manualRot(2, 0.2)">z +</button>
-    <button @click="manualRot(2, -0.2)">z -</button>
-    <div>Step size: <input type="text" v-model.number="stepSize"></div>
-    <div> pos: {{ uniformValues.camera_position }} </div>
-    <div> dir: {{ uniformValues.camera_direction }} </div>
-    <button @click="saveImage()">Save image</button>
-    <a class="virtual-link" ref="vlink"></a>
+    <div class="controls-container">
+      <div>
+        <span>Manual rotation adjust</span>
+        <button @click="manualRot(0, 0.2)">x +</button>
+        <button @click="manualRot(0, -0.2)">x -</button>
+        <button @click="manualRot(1, 0.2)">y +</button>
+        <button @click="manualRot(1, -0.2)">y -</button>
+        <button @click="manualRot(2, 0.2)">z +</button>
+        <button @click="manualRot(2, -0.2)">z -</button>
+      </div>
+      <div>Step size: <input type="text" v-model.number="stepSize"></div>
+      <div> pos: {{ roundArray(uniformValues.camera_position) }} </div>
+      <div> dir: {{ roundArray(uniformValues.camera_direction) }} </div>
+      <div> fov: {{ uniformValues.field_of_view }} </div>
+      <button @click="saveImage()">Save image</button>
+      <a class="virtual-link" ref="vlink"></a>
+    </div>
   </div>
 </template>
 
 <script>
-
 const vertexSource = require('@/shaders/vertex.glsl')
 const fragmentSource = require('@/shaders/fragment.glsl')
 
@@ -52,11 +57,11 @@ export default {
     }
   },
   mounted () {
-    let canvas = this.$refs.renderCanvas
+    const canvas = this.$refs.renderCanvas
     this.canvasInfo = canvas.getBoundingClientRect()
     this.gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true }) || canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true })
-    canvas.width = 850
-    canvas.height = 850
+    canvas.width = 900
+    canvas.height = 900
 
     this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight)
 
@@ -71,7 +76,7 @@ export default {
   },
   methods: {
     setupWebGL (gl) {
-      let vertexShader = gl.createShader(gl.VERTEX_SHADER)
+      const vertexShader = gl.createShader(gl.VERTEX_SHADER)
       gl.shaderSource(vertexShader, vertexSource)
       gl.compileShader(vertexShader)
 
@@ -80,7 +85,7 @@ export default {
         return
       }
 
-      let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
+      const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
       gl.shaderSource(fragmentShader, fragmentSource)
       gl.compileShader(fragmentShader)
 
@@ -89,7 +94,7 @@ export default {
         return
       }
 
-      let program = gl.createProgram()
+      const program = gl.createProgram()
       gl.attachShader(program, vertexShader)
       gl.attachShader(program, fragmentShader)
       gl.linkProgram(program)
@@ -110,11 +115,11 @@ export default {
       this.drawFullscreenQuad()
     },
     drawFullscreenQuad () {
-      let gl = this.gl
+      const gl = this.gl
 
       // Only created once
       if (!this.buffer) {
-        let triangles = [
+        const triangles = [
           // First triangle
           1.0, 1.0,
           -1.0, 1.0,
@@ -132,11 +137,11 @@ export default {
 
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer)
 
-      let attributeLocations = {
+      const attributeLocations = {
         vert_position: gl.getAttribLocation(this.program, 'vert_position')
       }
 
-      let uniformLocations = {
+      const uniformLocations = {
         camera_position: gl.getUniformLocation(this.program, 'camera_position'),
         camera_direction: gl.getUniformLocation(this.program, 'camera_direction'),
         camera_right: gl.getUniformLocation(this.program, 'camera_right'),
@@ -198,22 +203,22 @@ export default {
       return new Float32Array([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]])
     },
     normalize (v) {
-      let len = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
+      const len = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
       return new Float32Array([v[0] / len, v[1] / len, v[2] / len])
     },
     rotateAround (axis, angle, vec) {
       axis = this.normalize(axis)
-      let s = Math.sin(angle)
-      let c = Math.cos(angle)
-      let oc = 1.0 - c
+      const s = Math.sin(angle)
+      const c = Math.cos(angle)
+      const oc = 1.0 - c
 
-      let mat3 = [
+      const mat3 = [
         [oc * axis[0] * axis[0] + c, oc * axis[0] * axis[1] - axis[2] * s, oc * axis[2] * axis[0] + axis[1] * s],
         [oc * axis[0] * axis[1] + axis[2] * s, oc * axis[1] * axis[1] + c, oc * axis[1] * axis[2] - axis[0] * s],
         [oc * axis[2] * axis[0] - axis[1] * s, oc * axis[1] * axis[2] + axis[0] * s, oc * axis[2] * axis[2] + c]
       ]
 
-      let res = new Float32Array([0, 0, 0])
+      const res = new Float32Array([0, 0, 0])
       for (var i = 0; i < 3; i++) {
         for (var j = 0; j < 3; j++) {
           res[i] += vec[j] * mat3[i][j]
@@ -232,17 +237,18 @@ export default {
     },
     drag (event) {
       if (!this.dragData.active) return
-      let relativeDrag = {
+      const relativeDrag = {
         x: -(event.clientX - this.dragData.startingPoint.x) / this.canvasInfo.width,
         y: -(event.clientY - this.dragData.startingPoint.y) / this.canvasInfo.height
       }
 
-      let sensitivity = 1.5
+      // const sensitivity = 1.5
+      const sensitivity = this.uniformValues.field_of_view[0] * 2
       relativeDrag.x *= sensitivity
       relativeDrag.y *= sensitivity
       let up = this.uniformValues.camera_up
       let newCameraRotation = this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_direction)
-      let right = this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_right)
+      const right = this.rotateAround(up, relativeDrag.x, this.uniformValues.camera_right)
 
       newCameraRotation = this.rotateAround(right, relativeDrag.y, newCameraRotation)
       up = this.rotateAround(right, relativeDrag.y, up)
@@ -263,19 +269,25 @@ export default {
       this.dragData.active = false
     },
     handleScroll (event) {
-      this.uniformValues.field_of_view[0] += event.deltaY / 200
+      this.uniformValues.field_of_view[0] *= 1 + (event.deltaY / 100)
       this.drawFullscreenQuad()
     },
     manualRot (coord, value) {
-      let newCameraRotation = this.uniformValues.camera_direction
+      const newCameraRotation = new Float32Array(this.uniformValues.camera_direction)
       newCameraRotation[coord] += value
       this.uniformValues.camera_direction = newCameraRotation
       this.drawFullscreenQuad()
     },
+    roundArray (arr) {
+      // Count how many numbers are there in the decimal part and round accordingly
+      const decimalLength = (this.stepSize + '').split('.')[1].length
+      const newArr = `x = ${arr[0].toFixed(decimalLength)}, y = ${arr[1].toFixed(decimalLength)}, z = ${arr[2].toFixed(decimalLength)}`
+      return newArr
+    },
     saveImage () {
-      let canvas = this.$refs.renderCanvas
-      let url = canvas.toDataURL('image/png').replace(/^data:image\/[^;]/, 'data:application/octet-stream')
-      let link = this.$refs.vlink
+      const canvas = this.$refs.renderCanvas
+      const url = canvas.toDataURL('image/png').replace(/^data:image\/[^;]/, 'data:application/octet-stream')
+      const link = this.$refs.vlink
 
       link.href = url
       link.download = `melion-screenshot-${Math.floor(Date.now() / 1000)}.png`
@@ -287,16 +299,29 @@ export default {
 }
 </script>
 
-<style scoped lang="sass">
+<style scoped>
 
-div
-  text-align: center
+.wrapper {
+  text-align: center;
+}
 
-.main-canvas
-  height: 850px
-  width: 850px
+.main-canvas {
+  height: 900px;
+  width: 900px;
+}
 
-.virtual-link
-  display: none
+.controls-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  padding: 15px;
+  text-align: left;
+  line-height: 1.15vw;
+  font-size: .7vw;
+}
+
+.virtual-link {
+  display: none;
+}
 
 </style>
