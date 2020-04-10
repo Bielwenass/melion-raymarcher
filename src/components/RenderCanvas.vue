@@ -269,7 +269,7 @@ export default {
       this.dragData.active = false
     },
     handleScroll (event) {
-      this.uniformValues.field_of_view[0] *= 1 + (event.deltaY / 100)
+      this.uniformValues.field_of_view[0] *= 1 + (Math.sign(event.deltaY) / 30)
       this.drawFullscreenQuad()
     },
     manualRot (coord, value) {
