@@ -38,7 +38,7 @@ export default {
       buffer: null,
       program: null,
       uniformValues: {
-        camera_position: new Float32Array([-2, 0, 0]),
+        camera_position: new Float32Array([-1, 0.5, 0.5]),
         camera_direction: new Float32Array([1, 0, 0]),
         camera_right: new Float32Array([0, 0, -1]),
         camera_up: new Float32Array([0, 1, 0]),
@@ -219,8 +219,8 @@ export default {
       ]
 
       const res = new Float32Array([0, 0, 0])
-      for (var i = 0; i < 3; i++) {
-        for (var j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
           res[i] += vec[j] * mat3[i][j]
         }
       }
