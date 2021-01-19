@@ -2,13 +2,6 @@
 
 precision highp float;
 
-#define MAX_STEPS 300.
-#define MAX_DIST 400.
-#define SURF_DIST .00005
-
-#define SIZE 900
-#define GLOW_INTENSITY .1
-
 #define AA 1
 
 in vec2 norm_coords;
@@ -17,14 +10,23 @@ uniform vec3 camera_position;
 uniform vec3 camera_direction;
 uniform vec3 camera_right;
 uniform vec3 camera_up;
+
 uniform float field_of_view;
+
+uniform float max_steps;
+uniform float max_dist;
+uniform float surf_dist;
+uniform float glow_intensity;
+
+uniform int shape_modifier;
+uniform int iteration_count;
+
+uniform int canvas_size;
 
 out vec4 fragmentColor;
 
 // Attempts to do something with the original function. Doesn't really work
 // float GetDist(vec3 pos) {
-//   int iterations = 3;
-//   float modifier = -12.;
 
 //   // Distance between entities
 //   float padding = 0.;
@@ -40,15 +42,15 @@ out vec4 fragmentColor;
  
 //   float d1 = max(xx, max(yy, zz)); // Distance to the box
 //   float d = d1; 
-//   float p = modifier;
+//   float p = shape_modifier;
   
-//   for (int i = 1; i <= iterations; ++i) {
-//     if (i > int(iterations)) break;
+//   for (int i = 1; i <= iteration_count; ++i) {
+//     if (i > int(iteration_count)) break;
 //     float xa = mod(3. * x * p, 3.);
 //     float ya = mod(3. * y * p, 3.);
 //     float za = mod(3. * z * p, 3.);
 
-//     p *= float(modifier);
+//     p *= float(shape_modifier);
 
 //     float xx = abs(xa - (padding) / 2.) - (padding) / 2.;
 //     float yy = abs(ya - (padding) / 2.) - (padding) / 2.; 
@@ -63,9 +65,6 @@ out vec4 fragmentColor;
 // }
 
 float GetDist(vec3 pos) {
-  int iterations = 5;
-  int modifier = -11; // Tinker with this to get different configurations
-
   float x = pos.x;
   float y = pos.y;
   float z = pos.z;
@@ -84,13 +83,13 @@ float GetDist(vec3 pos) {
   float d = d1; 
   float p = 1.;
   
-  for (int i = 1; i <= iterations; ++i) {
-    if( i > int(iterations)) break;
+  for (int i = 1; i <= iteration_count; ++i) {
+    if( i > int(iteration_count)) break;
     float xa = mod(3.0 * x * p, 3.0);
     float ya = mod(3.0 * y * p, 3.0);
     float za = mod(3.0 * z * p, 3.0);
     
-    p *= float(int(modifier));
+    p *= float(int(shape_modifier));
 
     float xx = 0.5 - abs(xa - 1.5);
     float yy = 0.5 - abs(ya - 1.5); 
@@ -110,25 +109,25 @@ vec3 RayMarch(vec3 ro, vec3 rd) {
   // dO = distance to origin
 
   float dO = 0.;
-  float min_dist = MAX_DIST;
+  float min_dist = max_dist;
 
-  for(float steps_num = 0.; steps_num < MAX_STEPS; steps_num++) {
+  for(float steps_num = 0.; steps_num < max_steps; steps_num++) {
     vec3 p = ro + rd * dO;
     float dS = GetDist(p);
     vec3 rp = p + rd * dS;
     dO += dS;
     if (dS < min_dist) min_dist = dS;
 
-    // if(dS < SURF_DIST) return vec3 (dO, 1, min_dist);
-    if(dO > MAX_DIST || dS < SURF_DIST) return vec3(distance(ro, rp), steps_num, min_dist);
+    // if(dS < surf_dist) return vec3 (dO, 1, min_dist);
+    if(dO > max_dist || dS < surf_dist) return vec3(distance(ro, rp), steps_num, min_dist);
   }
 
-  return vec3(dO, MAX_STEPS, min_dist);
+  return vec3(dO, max_steps, min_dist);
 }
 
 vec3 GetNormal(vec3 p) {
   float d = 0.;
-  vec2 e = vec2(SURF_DIST * 2., 0);
+  vec2 e = vec2(surf_dist * 2., 0);
 
   vec3 n = d - vec3(
     GetDist(p - e.xyy),
@@ -173,7 +172,7 @@ void main() {
   float min_dist = 0.;
 
   vec3 rd;
-  float pixel_size = 2. / float(SIZE);
+  float pixel_size = 2. / float(canvas_size);
   float delta = pixel_size / 2.0 / float(AA);
 
   // With no antialiasing
@@ -209,11 +208,11 @@ void main() {
   // fragmentColor = vec4(normalize(vec3(dist, steps / 20., min_dist * 10000.)), 1.0);
 
   // With glow
-  // fragmentColor = vec4(col.x * 2., (col.x + steps / MAX_STEPS * GLOW_INTENSITY) / 2., col.x * 2., 1.0);
-  // fragmentColor = vec4(steps * 2. / MAX_STEPS * GLOW_INTENSITY, (col.x + steps / MAX_STEPS * GLOW_INTENSITY) / 2., col.x, 1.0);
+  // fragmentColor = vec4(col.x * 2., (col.x + steps / max_steps * glow_intensity) / 2., col.x * 2., 1.0);
+  fragmentColor = vec4(steps * 2. / max_steps * glow_intensity, (col.x + steps / max_steps * glow_intensity) / 2., col.x, 1.0);
 
   // Black & white
-  fragmentColor = vec4(col, 1.0);
+  // fragmentColor = vec4(col, 1.0);
 
   // White & black
   // fragmentColor = vec4(1.0 - col, 1.0);

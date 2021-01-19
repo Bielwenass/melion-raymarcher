@@ -8,8 +8,52 @@
         @wheel="handleScroll($event)"/>
     </div>
     <div class="controls-container">
+      <button @click="saveImage()">Save image</button>
+      <a class="virtual-link" ref="vlink"></a>
+
       <div>
-        <span>Manual rotation adjust</span>
+        Shape modifier
+        <input type="range" min="-15" max="15" step="1" :value="uniformValues.shape_modifier"
+          @input="updateUniformValue('shape_modifier', $event.target.value)">
+        {{ uniformValues.shape_modifier }}
+      </div>
+      <div>
+        Iterations
+        <input type="range" min="1" max="20" step="1" :value="uniformValues.iteration_count"
+          @input="updateUniformValue('iteration_count', $event.target.value)">
+        {{ uniformValues.iteration_count }}
+      </div>
+      <div>
+        Surf dist
+        <input type="range" min="0.005" max="0.1" step="0.005" :value="Math.pow(uniformValues.surf_dist, 1 / 3)"
+          @input="updateUniformValue('surf_dist', $event.target.value ** 3)">
+        {{ uniformValues.surf_dist.toFixed(7) }}
+      </div>
+      <div>
+        Glow intensity
+        <input type="range" min="0" max="10" step="0.01" :value="uniformValues.glow_intensity"
+          @input="updateUniformValue('glow_intensity', $event.target.value)">
+        {{ uniformValues.glow_intensity }}
+      </div>
+      <div>
+        Max steps
+        <input type="range" min="1" max="30" :value="Math.sqrt(uniformValues.max_steps)"
+          @input="updateUniformValue('max_steps', $event.target.value ** 2)">
+          {{ uniformValues.max_steps }}
+      </div>
+      <div>
+        Max dist
+        <input type="range" min="1" max="100" :value="Math.sqrt(uniformValues.max_dist)"
+          @input="updateUniformValue('max_dist', $event.target.value ** 2)">
+        {{ uniformValues.max_dist }}
+      </div>
+
+      <div>Position: {{ roundArray(uniformValues.camera_position) }} </div>
+      <div>Step size: <input type="text" v-model.number="stepSize"></div>
+      <div>Direction: {{ roundArray(uniformValues.camera_direction) }} </div>
+      <div>
+        <span>Manual camera rotation adjust </span>
+        <br>
         <button @click="manualRot(0, 0.2)">x +</button>
         <button @click="manualRot(0, -0.2)">x -</button>
         <button @click="manualRot(1, 0.2)">y +</button>
@@ -17,12 +61,7 @@
         <button @click="manualRot(2, 0.2)">z +</button>
         <button @click="manualRot(2, -0.2)">z -</button>
       </div>
-      <div>Step size: <input type="text" v-model.number="stepSize"></div>
-      <div> pos: {{ roundArray(uniformValues.camera_position) }} </div>
-      <div> dir: {{ roundArray(uniformValues.camera_direction) }} </div>
-      <div> fov: {{ uniformValues.field_of_view }} </div>
-      <button @click="saveImage()">Save image</button>
-      <a class="virtual-link" ref="vlink"></a>
+      <div> FOV: {{ uniformValues.field_of_view.toFixed(5) }} </div>
     </div>
   </div>
 </template>
@@ -42,7 +81,14 @@ export default {
         camera_direction: new Float32Array([1, 0, 0]),
         camera_right: new Float32Array([0, 0, -1]),
         camera_up: new Float32Array([0, 1, 0]),
-        field_of_view: new Float32Array([0.7])
+        field_of_view: 0.7,
+        max_steps: 256,
+        max_dist: 900,
+        surf_dist: 0.000064,
+        glow_intensity: 0.4,
+        shape_modifier: -11,
+        iteration_count: 5,
+        canvas_size: 900
       },
       canvasInfo: null,
       stepSize: 0.05,
@@ -60,6 +106,7 @@ export default {
     const canvas = this.$refs.renderCanvas
     this.canvasInfo = canvas.getBoundingClientRect()
     this.gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true }) || canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true })
+
     canvas.width = 900
     canvas.height = 900
 
@@ -146,7 +193,14 @@ export default {
         camera_direction: gl.getUniformLocation(this.program, 'camera_direction'),
         camera_right: gl.getUniformLocation(this.program, 'camera_right'),
         camera_up: gl.getUniformLocation(this.program, 'camera_up'),
-        field_of_view: gl.getUniformLocation(this.program, 'field_of_view')
+        field_of_view: gl.getUniformLocation(this.program, 'field_of_view'),
+        max_steps: gl.getUniformLocation(this.program, 'max_steps'),
+        max_dist: gl.getUniformLocation(this.program, 'max_dist'),
+        surf_dist: gl.getUniformLocation(this.program, 'surf_dist'),
+        glow_intensity: gl.getUniformLocation(this.program, 'glow_intensity'),
+        shape_modifier: gl.getUniformLocation(this.program, 'shape_modifier'),
+        iteration_count: gl.getUniformLocation(this.program, 'iteration_count'),
+        canvas_size: gl.getUniformLocation(this.program, 'canvas_size')
       }
 
       gl.vertexAttribPointer(attributeLocations.vert_position, 2, gl.FLOAT, gl.FALSE, 2 * Float32Array.BYTES_PER_ELEMENT, 0)
@@ -158,7 +212,14 @@ export default {
       gl.uniform3fv(uniformLocations.camera_direction, this.uniformValues.camera_direction)
       gl.uniform3fv(uniformLocations.camera_right, this.uniformValues.camera_right)
       gl.uniform3fv(uniformLocations.camera_up, this.uniformValues.camera_up)
-      gl.uniform1fv(uniformLocations.field_of_view, this.uniformValues.field_of_view)
+      gl.uniform1f(uniformLocations.field_of_view, this.uniformValues.field_of_view)
+      gl.uniform1f(uniformLocations.max_steps, this.uniformValues.max_steps)
+      gl.uniform1f(uniformLocations.max_dist, this.uniformValues.max_dist)
+      gl.uniform1f(uniformLocations.surf_dist, this.uniformValues.surf_dist)
+      gl.uniform1f(uniformLocations.glow_intensity, this.uniformValues.glow_intensity)
+      gl.uniform1i(uniformLocations.shape_modifier, this.uniformValues.shape_modifier)
+      gl.uniform1i(uniformLocations.iteration_count, this.uniformValues.iteration_count)
+      gl.uniform1i(uniformLocations.canvas_size, this.uniformValues.canvas_size)
 
       // Draw 6 vertices => 2 triangles:
       gl.drawArrays(this.gl.TRIANGLES, 0, 6)
@@ -197,6 +258,10 @@ export default {
       }
 
       event.preventDefault()
+      this.drawFullscreenQuad()
+    },
+    updateUniformValue (key, value) {
+      this.uniformValues[key] = value
       this.drawFullscreenQuad()
     },
     cross (a, b) {
@@ -243,7 +308,7 @@ export default {
       }
 
       // const sensitivity = 1.5
-      const sensitivity = this.uniformValues.field_of_view[0] * 2
+      const sensitivity = this.uniformValues.field_of_view * 2
       relativeDrag.x *= sensitivity
       relativeDrag.y *= sensitivity
       let up = this.uniformValues.camera_up
@@ -269,7 +334,7 @@ export default {
       this.dragData.active = false
     },
     handleScroll (event) {
-      this.uniformValues.field_of_view[0] *= 1 + (Math.sign(event.deltaY) / 30)
+      this.uniformValues.field_of_view *= 1 + (Math.sign(event.deltaY) / 30)
       this.drawFullscreenQuad()
     },
     manualRot (coord, value) {
@@ -314,10 +379,11 @@ export default {
   position: fixed;
   top: 0;
   right: 0;
+  min-width: 21vmax;
   padding: 15px;
   text-align: left;
-  line-height: 1.15vw;
-  font-size: .7vw;
+  line-height: 1.2vmax;
+  font-size: .9vmax;
 }
 
 .virtual-link {
