@@ -1,65 +1,124 @@
 <template>
   <div class="wrapper">
     <div class="canvas-container">
-      <canvas class="main-canvas" ref="renderCanvas"
+      <canvas
+        ref="renderCanvas"
+        class="main-canvas"
         @mousedown="startDragging($event)"
         @mousemove="drag($event)"
         @mouseup="stopDragging($event)"
-        @wheel="handleScroll($event)"/>
+        @wheel="handleScroll($event)"
+      />
     </div>
     <div class="controls-container">
-      <button @click="saveImage()">Save image</button>
-      <a class="virtual-link" ref="vlink"></a>
+      <button @click="saveImage()">
+        Save image
+      </button>
+      <a
+        ref="vlink"
+        class="virtual-link"
+      />
 
       <div>
         Shape modifier
-        <input type="range" min="-15" max="15" step="1" :value="uniformValues.shape_modifier"
-          @input="updateUniformValue('shape_modifier', $event.target.value)">
+        <input
+          type="range"
+          min="-15"
+          max="15"
+          step="1"
+          :value="uniformValues.shape_modifier"
+          @input="updateUniformValue('shape_modifier', $event.target.value)"
+        >
         {{ uniformValues.shape_modifier }}
       </div>
       <div>
         Iterations
-        <input type="range" min="1" max="20" step="1" :value="uniformValues.iteration_count"
-          @input="updateUniformValue('iteration_count', $event.target.value)">
+        <input
+          type="range"
+          min="1"
+          max="20"
+          step="1"
+          :value="uniformValues.iteration_count"
+          @input="updateUniformValue('iteration_count', $event.target.value)"
+        >
         {{ uniformValues.iteration_count }}
       </div>
       <div>
         Surf dist
-        <input type="range" min="0.005" max="0.1" step="0.005" :value="Math.pow(uniformValues.surf_dist, 1 / 3)"
-          @input="updateUniformValue('surf_dist', $event.target.value ** 3)">
+        <input
+          type="range"
+          min="0.005"
+          max="0.1"
+          step="0.005"
+          :value="Math.pow(uniformValues.surf_dist, 1 / 3)"
+          @input="updateUniformValue('surf_dist', $event.target.value ** 3)"
+        >
         {{ uniformValues.surf_dist.toFixed(7) }}
       </div>
       <div>
         Glow intensity
-        <input type="range" min="0" max="10" step="0.01" :value="uniformValues.glow_intensity"
-          @input="updateUniformValue('glow_intensity', $event.target.value)">
+        <input
+          type="range"
+          min="0"
+          max="10"
+          step="0.01"
+          :value="uniformValues.glow_intensity"
+          @input="updateUniformValue('glow_intensity', $event.target.value)"
+        >
         {{ uniformValues.glow_intensity }}
       </div>
       <div>
         Max steps
-        <input type="range" min="1" max="30" :value="Math.sqrt(uniformValues.max_steps)"
-          @input="updateUniformValue('max_steps', $event.target.value ** 2)">
-          {{ uniformValues.max_steps }}
+        <input
+          type="range"
+          min="1"
+          max="30"
+          :value="Math.sqrt(uniformValues.max_steps)"
+          @input="updateUniformValue('max_steps', $event.target.value ** 2)"
+        >
+        {{ uniformValues.max_steps }}
       </div>
       <div>
         Max dist
-        <input type="range" min="1" max="100" :value="Math.sqrt(uniformValues.max_dist)"
-          @input="updateUniformValue('max_dist', $event.target.value ** 2)">
+        <input
+          type="range"
+          min="1"
+          max="100"
+          :value="Math.sqrt(uniformValues.max_dist)"
+          @input="updateUniformValue('max_dist', $event.target.value ** 2)"
+        >
         {{ uniformValues.max_dist }}
       </div>
 
       <div>Position: {{ roundArray(uniformValues.camera_position) }} </div>
-      <div>Step size: <input type="text" v-model.number="stepSize"></div>
+      <div>
+        Step size: <input
+          v-model.number="stepSize"
+          type="text"
+        >
+      </div>
       <div>Direction: {{ roundArray(uniformValues.camera_direction) }} </div>
       <div>
         <span>Manual camera rotation adjust </span>
         <br>
-        <button @click="manualRot(0, 0.2)">x +</button>
-        <button @click="manualRot(0, -0.2)">x -</button>
-        <button @click="manualRot(1, 0.2)">y +</button>
-        <button @click="manualRot(1, -0.2)">y -</button>
-        <button @click="manualRot(2, 0.2)">z +</button>
-        <button @click="manualRot(2, -0.2)">z -</button>
+        <button @click="manualRot(0, 0.2)">
+          x +
+        </button>
+        <button @click="manualRot(0, -0.2)">
+          x -
+        </button>
+        <button @click="manualRot(1, 0.2)">
+          y +
+        </button>
+        <button @click="manualRot(1, -0.2)">
+          y -
+        </button>
+        <button @click="manualRot(2, 0.2)">
+          z +
+        </button>
+        <button @click="manualRot(2, -0.2)">
+          z -
+        </button>
       </div>
       <div> FOV: {{ uniformValues.field_of_view.toFixed(5) }} </div>
     </div>
@@ -67,8 +126,8 @@
 </template>
 
 <script>
-const vertexSource = require('@/shaders/vertex.glsl')
 const fragmentSource = require('@/shaders/fragment.glsl')
+const vertexSource = require('@/shaders/vertex.glsl')
 
 export default {
   data () {
@@ -104,6 +163,7 @@ export default {
   },
   mounted () {
     const canvas = this.$refs.renderCanvas
+
     this.canvasInfo = canvas.getBoundingClientRect()
     this.gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true }) || canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true })
 
@@ -124,24 +184,29 @@ export default {
   methods: {
     setupWebGL (gl) {
       const vertexShader = gl.createShader(gl.VERTEX_SHADER)
+
       gl.shaderSource(vertexShader, vertexSource)
       gl.compileShader(vertexShader)
 
       if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
         console.error(gl.getShaderInfoLog(vertexShader))
+
         return
       }
 
       const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
+
       gl.shaderSource(fragmentShader, fragmentSource)
       gl.compileShader(fragmentShader)
 
       if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
         console.error(gl.getShaderInfoLog(fragmentShader))
+
         return
       }
 
       const program = gl.createProgram()
+
       gl.attachShader(program, vertexShader)
       gl.attachShader(program, fragmentShader)
       gl.linkProgram(program)
@@ -154,6 +219,7 @@ export default {
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
         console.log(gl.LINK_STATUS)
         console.log(gl.getProgramInfoLog(program))
+
         return
       }
 
@@ -203,7 +269,14 @@ export default {
         canvas_size: gl.getUniformLocation(this.program, 'canvas_size')
       }
 
-      gl.vertexAttribPointer(attributeLocations.vert_position, 2, gl.FLOAT, gl.FALSE, 2 * Float32Array.BYTES_PER_ELEMENT, 0)
+      gl.vertexAttribPointer(
+        attributeLocations.vert_position,
+        2,
+        gl.FLOAT,
+        gl.FALSE,
+        2 * Float32Array.BYTES_PER_ELEMENT,
+        0
+      )
       gl.enableVertexAttribArray(attributeLocations.vert_position)
 
       gl.useProgram(this.program)
@@ -233,25 +306,50 @@ export default {
     handleKeypress (event) {
       const key = event.code
       let keySensetivity = this.stepSize
+
       keySensetivity *= event.shiftKey ? 10 : 1
       switch (key) {
         case 'KeyW':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, keySensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(
+            this.uniformValues.camera_position,
+            this.uniformValues.camera_direction,
+            keySensetivity
+          )
           break
         case 'KeyA':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, -keySensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(
+            this.uniformValues.camera_position,
+            this.uniformValues.camera_right,
+            -keySensetivity
+          )
           break
         case 'KeyS':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_direction, -keySensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(
+            this.uniformValues.camera_position,
+            this.uniformValues.camera_direction,
+            -keySensetivity
+          )
           break
         case 'KeyD':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_right, keySensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(
+            this.uniformValues.camera_position,
+            this.uniformValues.camera_right,
+            keySensetivity
+          )
           break
         case 'KeyQ':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, -keySensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(
+            this.uniformValues.camera_position,
+            this.uniformValues.camera_up,
+            -keySensetivity
+          )
           break
         case 'KeyE':
-          this.uniformValues.camera_position = this.shiftWithAlpha(this.uniformValues.camera_position, this.uniformValues.camera_up, keySensetivity)
+          this.uniformValues.camera_position = this.shiftWithAlpha(
+            this.uniformValues.camera_position,
+            this.uniformValues.camera_up,
+            keySensetivity
+          )
           break
         default:
           return
@@ -269,6 +367,7 @@ export default {
     },
     normalize (v) {
       const len = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
+
       return new Float32Array([v[0] / len, v[1] / len, v[2] / len])
     },
     rotateAround (axis, angle, vec) {
@@ -284,6 +383,7 @@ export default {
       ]
 
       const res = new Float32Array([0, 0, 0])
+
       for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
           res[i] += vec[j] * mat3[i][j]
@@ -309,6 +409,7 @@ export default {
 
       // const sensitivity = 1.5
       const sensitivity = this.uniformValues.field_of_view * 2
+
       relativeDrag.x *= sensitivity
       relativeDrag.y *= sensitivity
       let up = this.uniformValues.camera_up
@@ -339,6 +440,7 @@ export default {
     },
     manualRot (coord, value) {
       const newCameraRotation = new Float32Array(this.uniformValues.camera_direction)
+
       newCameraRotation[coord] += value
       this.uniformValues.camera_direction = newCameraRotation
       this.drawFullscreenQuad()
@@ -346,7 +448,11 @@ export default {
     roundArray (arr) {
       // Count how many numbers are there in the decimal part and round accordingly
       const decimalLength = (this.stepSize + '').split('.')[1].length
-      const newArr = `x = ${arr[0].toFixed(decimalLength)}, y = ${arr[1].toFixed(decimalLength)}, z = ${arr[2].toFixed(decimalLength)}`
+      const newArr = `
+        x = ${arr[0].toFixed(decimalLength)}, 
+        y = ${arr[1].toFixed(decimalLength)},
+        z = ${arr[2].toFixed(decimalLength)}`
+
       return newArr
     },
     saveImage () {
