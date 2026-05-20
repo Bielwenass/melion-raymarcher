@@ -1,0 +1,32 @@
+@import "./assets/normalize.min.css";
+
+body {
+  font-family: monospace;
+  background-color: black;
+  background-image: url("./assets/dots.png");
+  color: white;
+}
+
+.wrapper {
+  text-align: center;
+}
+
+.main-canvas {
+  height: 900px;
+  width: 900px;
+}
+
+.controls-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  min-width: 21vmax;
+  padding: 15px;
+  text-align: left;
+  line-height: 1.2vmax;
+  font-size: 0.9vmax;
+}
+
+.virtual-link {
+  display: none;
+}

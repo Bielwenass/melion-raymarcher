@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/favicon.png">
+    <title>Melion Raymarcher</title>
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="canvas-container">
+        <canvas id="render-canvas" class="main-canvas"></canvas>
+      </div>
+      <div class="controls-container">
+        <button id="save-btn">Save image</button>
+        <a id="virtual-link" class="virtual-link"></a>
+
+        <div>
+          Shape modifier
+          <input id="slider-shape-modifier" type="range" min="-15" max="15" step="1">
+          <span id="val-shape-modifier"></span>
+        </div>
+        <div>
+          Iterations
+          <input id="slider-iteration-count" type="range" min="1" max="20" step="1">
+          <span id="val-iteration-count"></span>
+        </div>
+        <div>
+          Surf dist
+          <input id="slider-surf-dist" type="range" min="0.005" max="0.1" step="0.005">
+          <span id="val-surf-dist"></span>
+        </div>
+        <div>
+          Glow intensity
+          <input id="slider-glow-intensity" type="range" min="0" max="10" step="0.01">
+          <span id="val-glow-intensity"></span>
+        </div>
+        <div>
+          Max steps
+          <input id="slider-max-steps" type="range" min="1" max="30">
+          <span id="val-max-steps"></span>
+        </div>
+        <div>
+          Max dist
+          <input id="slider-max-dist" type="range" min="1" max="100">
+          <span id="val-max-dist"></span>
+        </div>
+
+        <div>Position: <span id="display-position"></span></div>
+        <div>Step size: <input id="input-step-size" type="text" value="0.05"></div>
+        <div>Direction: <span id="display-direction"></span></div>
+        <div>
+          <span>Manual camera rotation adjust</span>
+          <br>
+          <button data-coord="0" data-delta="0.2">x +</button>
+          <button data-coord="0" data-delta="-0.2">x -</button>
+          <button data-coord="1" data-delta="0.2">y +</button>
+          <button data-coord="1" data-delta="-0.2">y -</button>
+          <button data-coord="2" data-delta="0.2">z +</button>
+          <button data-coord="2" data-delta="-0.2">z -</button>
+        </div>
+        <div>FOV: <span id="display-fov"></span></div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

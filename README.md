@@ -1,6 +1,6 @@
 # Melion Raymarcher
 
-A primitive raymarching WebGL renderer for HTML canvas made as a Vue.js component for convenience. It can quite easily be altered to work with vanilla js if you wish so. Distance function could use a lot of work to render actual random fractals. I haven't quite figured it out yet.
+A primitive raymarching WebGL2 renderer for HTML canvas. Distance function could use a lot of work to render actual random fractals. I haven't quite figured it out yet.
 
 Demo is available for you to play with at [bielwenass.com](https://www.bielwenass.com/).
 
@@ -25,13 +25,12 @@ Use controls on the right to tweak the rendering parameters and immediately see 
 
 ## Local setup
 
-Node.js v17 is recommended.
 ```
 git clone https://github.com/Bielwenass/melion-raymarcher.git
 cd melion-raymarcher
-yarn
-yarn serve
+bun install
+bun dev
 ```
 
-This is a simple barebones renderer, edit fragment.glsl to create your own shaders. You can also experiment with the default one.
+This is a simple barebones renderer, edit `src/shaders/fragment.glsl` to create your own shaders.
 
